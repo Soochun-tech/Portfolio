@@ -1,0 +1,185 @@
+---
+title: "Final"
+author: "Soochun An"
+date: "2025-07-21"
+output: pdf_document
+---
+
+```{r}
+library(factoextra)
+library(mclust)
+library(dplyr)
+library(magrittr)
+library(cluster)
+
+set.seed(10000)
+movies <- read.csv("C:/Users/asd05/Desktop/4051/movies.csv")
+summary(movies)
+str(movies) # Check chr
+movies_data <- nrow(movies)
+  
+na_data <- is.na(movies) #check NA
+table(na_data)## NA table
+colSums(is.na(movies[, c("Year", "Title", "Rating", "Duration..min.")])) 
+#Check for NA in each column
+colMeans(is.na(movies)) 
+#Check the percentage of NAs in each column, and consider removing columns with a high percentage of missing values.
+
+clean_data <- movies %>% filter(complete.cases(select(., Year, Duration..min., Rating)))
+summary(select(clean_data, Duration..min., Year, Rating))
+#Summary of the data after removing NA 
+after_na_removed <- nrow(clean_data)# check 
+print(after_na_removed)
+removed_by_Na <- movies_data - after_na_removed
+print(removed_by_Na)
+
+boxplot(clean_data$Duration..min., main = "Outlier check")
+#Check for outliers using boxplots.
+boxplot(clean_data$Year, main = "Outlier check")
+
+
+remove_outliers_box <- function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  lower <- q1 - 1.5 * iqr
+  upper <- q3 + 1.5 * iqr
+  return(x >= lower & x <= upper)
+} ## Outlier removal formula
+
+clean_data <- clean_data %>%
+  filter(
+    remove_outliers_box(Year),
+    remove_outliers_box(Duration..min.),
+  ) 
+## Apply the outlier removal formula to each variable, but perform it only for Duration and Year since only these variables affect scaling and clustering.
+ 
+boxplot(clean_data$Duration..min., main = "After outlier removed")
+boxplot(clean_data$Year, main = "After outlier removed")
+summary(select(clean_data, Duration..min., Year, Rating))
+after_outlier_removed <- nrow(clean_data)
+print(after_outlier_removed)
+removed_by_outlier <- after_na_removed - after_outlier_removed 
+print(removed_by_outlier)
+
+data_cluster <- scale(clean_data[, c("Year", "Duration..min.")])
+##The data is scaled because the variables are on different scales.
+
+fviz_nbclust(data_cluster, kmeans, method = "wss") +
+  labs(title = "Elbow Method for Determining Optimal k")
+# Elbow plot to determine the optimal number of clusters
+
+km_result <- kmeans(data_cluster, centers = 3, nstart = 50)# set nstart to 50.
+fviz_cluster(km_result, data = data_cluster, geom = "point", ellipse.type = "convex") 
+  ggtitle("K-means Clustering of Movies")
+clean_data$km_result <- as.factor(km_result$cluster)
+
+Kmeans_summary <- clean_data %>%
+  group_by(km_result) %>%
+  summarise(avg_year = round(mean(Year), 0),
+            ## The year does not need to be in decimal form
+    avg_duration = mean(Duration..min.), 
+    avg_rating = mean(Rating),
+    count = n())
+print(Kmeans_summary)
+
+
+top_movies_by_Kmeans <- clean_data %>%
+  group_by(km_result) %>%
+  arrange(desc(Rating)) %>%
+  slice_head(n = 5) %>%
+  select(km_result, Title, Rating, Year, Duration..min.)
+#To recommend movies by cluster, we extract the top 5 highest-rated movies from each cluster.
+print(top_movies_by_Kmeans)
+
+
+d <- dist(data_cluster, method = "euclidean")
+hc_result1  <- hclust(d, method = "complete")
+hc_result2 <- hclust(d, method = "single")
+hc_result3 <- hclust(d, method = "average")
+hc_clusters1 <- cutree(hc_result1, k = 3)
+hc_clusters2<- cutree(hc_result2, k = 3)
+hc_clusters3<- cutree(hc_result3, k = 3)
+par(mfrow = c(2, 2))
+plot(hc_result1, main = "Hierarchical Clustering Dendrogram Complete")
+plot(hc_result2, main = "Hierarchical Clustering Dendrogram single")
+plot(hc_result3, main = "Hierarchical Clustering Dendrogram average")
+
+fviz_cluster( list(data = data_cluster, cluster = hc_clusters1),
+  geom = "point", ellipse.type = "convex") + ggtitle("Hierarchical Clustering Dendrogram Complete")
+fviz_cluster( list(data = data_cluster, cluster = hc_clusters2),
+  geom = "point", ellipse.type = "convex") + ggtitle("Hierarchical Clustering Dendrogram single")
+fviz_cluster( list(data = data_cluster, cluster = hc_clusters3),
+  geom = "point", ellipse.type = "convex") + ggtitle("Hierarchical Clustering Dendrogram average")
+clean_data$hc_cluster1 <- as.factor(hc_clusters1)
+## Complete linkage was chosen because it produced the most well-separated and evenly distributed clusters. 
+
+
+
+hc_summary <- clean_data %>%
+  group_by(hc_cluster1) %>%
+  summarise(
+    avg_year = mean(Year),
+    avg_duration = mean(Duration..min.), 
+    avg_rating = mean(Rating),
+    count = n())
+print(hc_summary)
+
+
+top_movies_by_hc_cluster <- clean_data %>%
+  group_by(hc_cluster1) %>%
+  arrange(desc(Rating)) %>%
+  slice_head(n = 5) %>%
+  select(hc_cluster1, Title, Rating, Year, Duration..min.)
+print(top_movies_by_hc_cluster)
+
+
+
+gmm_result1 <- Mclust(data_cluster)
+##Since GMM automatically finds the optimal number of clusters, Just check the optimal number of clusters 
+summary(gmm_result1)
+fviz_mclust(gmm_result1, what = "classification", geom = "point", main = "GMM Clustering")
+
+gmm_result2 <- Mclust(data_cluster, G = 3)
+##To compare with other clustering methods, we fix G (number of clusters), although it may vary 
+summary(gmm_result2)
+fviz_mclust(gmm_result2, what = "classification", geom = "point", main = "GMM Clustering")
+clean_data$gmm_cluster2 <- as.factor(gmm_result2$classification)
+
+
+
+
+GMM_summary <- clean_data %>%
+  group_by(gmm_cluster2) %>%
+  summarise(
+    avg_year = round(mean(Year), 0),
+    avg_duration = mean(Duration..min.), 
+    avg_rating = mean(Rating),
+    count = n())
+print(GMM_summary)
+
+
+top_movies_by_GMM <- clean_data %>%
+  group_by(gmm_cluster2) %>%
+  arrange(desc(Rating)) %>%
+  slice_head(n = 5) %>%
+  select(gmm_cluster2, Title, Rating, Year, Duration..min.)
+print(top_movies_by_GMM)
+
+
+
+
+
+
+```
+
+##Summary  
+Mean imputation can distort the data and lead to biased clustering results, especially for distance-based methods like K-means. Since the missing rate was low, removing rows with NA was a safer and more accurate choice.
+
+Outliers were removed using the IQR method because it is not affected by extreme values and can detect outliers without assuming any specific data distribution.
+
+
+
+
+
+
