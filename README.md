@@ -11,19 +11,6 @@ This project applies and compares four outlier detection techniques to identify 
 
 ---
 
-## 💼 Business Context
-
-As cryptocurrency adoption accelerates, so does the risk of financial crime. According to Europol (2022), fraud and money laundering activities exploiting cryptocurrencies have increased considerably in recent years. For financial institutions, crypto exchanges, and regulators, the ability to detect high-risk accounts early is critical for:
-
-- **Compliance & AML (Anti-Money Laundering):** Proactively flagging suspicious accounts reduces regulatory risk and helps meet FATF guidelines on virtual asset monitoring
-- **Fraud Prevention:** Early detection of abnormal transaction patterns can prevent financial losses before illicit fund transfers are completed
-- **Operational Efficiency:** Automated outlier detection reduces the manual review burden on compliance teams by narrowing down the pool of accounts requiring investigation
-- **Risk Scoring:** Anomaly scores produced by models like Isolation Forest can be integrated into a real-time risk scoring pipeline, enabling dynamic account monitoring at scale
-
-This project demonstrates how statistical and machine learning-based outlier detection can serve as a first line of defense in a broader fraud detection or AML compliance system.
-
----
-
 ## 🛠️ Methods
 
 | Method | Description | Threshold |
