@@ -5,13 +5,26 @@
 
 ---
 
-## Overview
+## 📌 Overview
 
 This project applies and compares four outlier detection techniques to identify potentially fraudulent accounts based on Ethereum transaction data. The original dataset contains 4,681 accounts and 50 variables. After removing features with extensive missing values, 2,029 observations and 10 key variables were used for analysis.
 
 ---
 
-## Methods
+## 💼 Business Context
+
+As cryptocurrency adoption accelerates, so does the risk of financial crime. According to Europol (2022), fraud and money laundering activities exploiting cryptocurrencies have increased considerably in recent years. For financial institutions, crypto exchanges, and regulators, the ability to detect high-risk accounts early is critical for:
+
+- **Compliance & AML (Anti-Money Laundering):** Proactively flagging suspicious accounts reduces regulatory risk and helps meet FATF guidelines on virtual asset monitoring
+- **Fraud Prevention:** Early detection of abnormal transaction patterns can prevent financial losses before illicit fund transfers are completed
+- **Operational Efficiency:** Automated outlier detection reduces the manual review burden on compliance teams by narrowing down the pool of accounts requiring investigation
+- **Risk Scoring:** Anomaly scores produced by models like Isolation Forest can be integrated into a real-time risk scoring pipeline, enabling dynamic account monitoring at scale
+
+This project demonstrates how statistical and machine learning-based outlier detection can serve as a first line of defense in a broader fraud detection or AML compliance system.
+
+---
+
+## 🛠️ Methods
 
 | Method | Description | Threshold |
 |--------|-------------|-----------|
@@ -37,12 +50,25 @@ This project applies and compares four outlier detection techniques to identify 
 
 ---
 
-## Key Findings
+## 💡 Key Findings
 
 - **IQR and Z-score** are highly sensitive to extreme values in heavy-tailed distributions, leading to a high false positive rate — flagging 806 and 152 accounts respectively
 - **Isolation Forest** captures structurally abnormal accounts by considering multivariate combinations of transaction frequency, network size, and address diversity — aligning with FATF fraud risk indicators
 - **LASSO** complements Isolation Forest by detecting accounts with irregular fund flow relationships, regardless of transaction volume or network size
 - **Using Isolation Forest and LASSO in parallel is the most effective approach** for Ethereum fraud detection
+
+---
+
+## 💼 Business Implications
+
+| Finding | Business Takeaway |
+|--------|-------------------|
+| IQR & Z-score produce 800+ false positives | Relying on simple threshold rules would overwhelm compliance teams with unnecessary investigations, increasing operational cost |
+| Isolation Forest flags accounts with high tx frequency & wide networks | These behavioral signals map directly to FATF red flags — making the model actionable for AML teams without additional tuning |
+| LASSO identifies irregular fund flow accounts | Catches a different class of suspicious accounts (e.g. structuring or layering behavior) that activity-based models miss |
+| Isolation Forest + LASSO combined detect 83 unique high-risk accounts | A dual-model pipeline reduces false negatives while keeping the review queue manageable for compliance analysts |
+
+> **Bottom line:** A combined Isolation Forest + LASSO pipeline offers the best balance between detection coverage and operational efficiency — making it suitable for integration into real-world AML or fraud monitoring systems.
 
 ---
 
