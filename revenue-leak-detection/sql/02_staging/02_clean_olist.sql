@@ -1,22 +1,5 @@
--- =============================================================
--- 02_clean_olist.sql
--- raw_olist_* → staging_olist_*
---
--- Cleaning highlights:
---   * orders     — drop "delivered" rows missing delivery timestamp; compute delay
---   * payments   — aggregate multi-method payments to 1 row per order
---   * reviews    — DEDUPE (some orders have 2-3 reviews); keep latest by answer_ts
---   * customers/sellers — UPPER state codes
---   * products   — LEFT JOIN with category_translation for English name
--- =============================================================
 
 USE portfolio;
-
--- -------------------------------------------------------------
--- 1. staging_olist_orders
---    Rule: order_status='delivered' MUST have delivered_customer_date.
---    Otherwise the row is internally inconsistent.
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_orders;
 
 INSERT INTO staging_olist_orders (
@@ -58,10 +41,6 @@ WHERE
     AND NOT (order_delivered_customer_date IS NOT NULL
              AND order_delivered_customer_date < order_purchase_timestamp);
 
-
--- -------------------------------------------------------------
--- 2. staging_olist_order_items
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_order_items;
 
 INSERT INTO staging_olist_order_items (
@@ -83,13 +62,6 @@ WHERE EXISTS (SELECT 1 FROM staging_olist_orders o WHERE o.order_id = oi.order_i
   AND oi.price >= 0
   AND oi.freight_value >= 0;
 
-
--- -------------------------------------------------------------
--- 3. staging_olist_payments
---    Aggregate: one row per order_id.
---    primary_payment_type = whichever payment method has the highest
---    total value for that order (using window function).
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_payments;
 
 INSERT INTO staging_olist_payments (
@@ -105,10 +77,10 @@ per_order_method AS (
         SUM(payment_value)        AS method_value,
         MAX(payment_installments) AS installments
     FROM raw_olist_order_payments
-    WHERE payment_value > 0           -- drop $0 voucher records that net out
+    WHERE payment_value > 0           
     GROUP BY order_id, payment_type
 ),
--- Rank methods within each order by value
+
 ranked AS (
     SELECT
         order_id,
@@ -139,13 +111,6 @@ JOIN ranked r ON r.order_id = o.order_id AND r.rn = 1
 -- Only orders that survived staging
 WHERE EXISTS (SELECT 1 FROM staging_olist_orders so WHERE so.order_id = o.order_id);
 
-
--- -------------------------------------------------------------
--- 4. staging_olist_reviews
---    DEDUPE: some orders have multiple reviews. Keep the latest by
---    review_answer_timestamp (or creation_date if answer is null).
---    Demonstrates ROW_NUMBER + COALESCE for tie-breaking.
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_reviews;
 
 INSERT INTO staging_olist_reviews (
@@ -164,10 +129,10 @@ WITH ranked_reviews AS (
         ROW_NUMBER() OVER (
             PARTITION BY order_id
             ORDER BY COALESCE(review_answer_timestamp, review_creation_date) DESC,
-                     review_id DESC          -- final tiebreaker for stability
+                     review_id DESC         
         ) AS rn
     FROM raw_olist_order_reviews
-    WHERE review_score BETWEEN 1 AND 5      -- drop garbage scores
+    WHERE review_score BETWEEN 1 AND 5     
 )
 SELECT
     order_id,
@@ -182,10 +147,6 @@ FROM ranked_reviews
 WHERE rn = 1
   AND EXISTS (SELECT 1 FROM staging_olist_orders so WHERE so.order_id = ranked_reviews.order_id);
 
-
--- -------------------------------------------------------------
--- 5. staging_olist_customers
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_customers;
 
 INSERT INTO staging_olist_customers (
@@ -204,36 +165,20 @@ WHERE customer_state IS NOT NULL
   AND CHAR_LENGTH(TRIM(customer_state)) = 2;
 
 
--- -------------------------------------------------------------
--- 6. staging_olist_sellers
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_sellers;
 
-INSERT INTO staging_olist_sellers (
-    seller_id, seller_zip_prefix, seller_city, seller_state
-)
-SELECT
-    seller_id,
-    LPAD(seller_zip_code_prefix, 5, '0') AS seller_zip_prefix,
-    LOWER(TRIM(seller_city)) AS seller_city,
-    UPPER(TRIM(seller_state)) AS seller_state
-FROM raw_olist_sellers
+INSERT INTO staging_olist_sellers (seller_id, seller_zip_prefix, seller_city, seller_state)
+SELECT seller_id,LPAD(seller_zip_code_prefix, 5, '0') AS seller_zip_prefix,
+       LOWER(TRIM(seller_city)) AS seller_city,
+       UPPER(TRIM(seller_state)) AS seller_state
+
+    FROM raw_olist_sellers
 WHERE seller_state IS NOT NULL
   AND CHAR_LENGTH(TRIM(seller_state)) = 2;
 
-
--- -------------------------------------------------------------
--- 7. staging_olist_products
---    LEFT JOIN translation table to attach English category name.
---    Drop products with NULL category (~600 rows).
--- -------------------------------------------------------------
 TRUNCATE TABLE staging_olist_products;
 
-INSERT INTO staging_olist_products (
-    product_id, category_pt, category_en,
-    name_length, description_length, photo_count,
-    weight_g, length_cm, height_cm, width_cm
-)
+INSERT INTO staging_olist_products ( product_id, category_pt, category_en,name_length, description_length, photo_count,weight_g, length_cm, height_cm, width_cm)
 SELECT
     p.product_id,
     p.product_category_name                AS category_pt,
@@ -250,10 +195,6 @@ LEFT JOIN raw_olist_category_translation t
        ON t.product_category_name = p.product_category_name
 WHERE p.product_category_name IS NOT NULL;
 
-
--- -------------------------------------------------------------
--- Verify — row counts before/after
--- -------------------------------------------------------------
 SELECT 'orders'        AS tbl, (SELECT COUNT(*) FROM raw_olist_orders)         AS raw_n, (SELECT COUNT(*) FROM staging_olist_orders)         AS stg_n
 UNION ALL SELECT 'order_items',  (SELECT COUNT(*) FROM raw_olist_order_items),    (SELECT COUNT(*) FROM staging_olist_order_items)
 UNION ALL SELECT 'payments',     (SELECT COUNT(*) FROM raw_olist_order_payments), (SELECT COUNT(*) FROM staging_olist_payments)
