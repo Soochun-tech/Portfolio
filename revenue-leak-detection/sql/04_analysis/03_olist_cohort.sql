@@ -1,13 +1,11 @@
 -- =============================================================
 -- 03_olist_cohort.sql
--- 비즈니스 질문: 첫 구매 월 코호트별로 N개월 후 재구매율은?
+-- Business Question: What is the repurchase rate N months after the first purchase month? (by cohort)
 --
--- 가이드: sql/04_analysis/README.md 의 "문제 3" 참고
--- 사용 테이블:
---   staging_olist_orders
---   staging_olist_customers   -- customer_unique_id (재구매 식별)
+-- Tables Used:
+--    staging_olist_orders
+--    staging_olist_customers   -- used for customer_unique_id (identity tracking)
 -- =============================================================
-
 USE portfolio;
 WITH
 purchases AS (
