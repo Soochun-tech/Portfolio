@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Download NYC Taxi Zone lookup CSV (needed to join zone_id -> borough/zone name).
 
 set -euo pipefail
 

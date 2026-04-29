@@ -1,14 +1,3 @@
--- =============================================================
--- 02_olist_seller_leak.sql
--- Business Question: Where is seller revenue leaking?
--- (Funnel: Late Delivery → Bad Review → Lost Repeat Purchase)
---
--- Tables Used:
---    staging_olist_orders, staging_olist_order_items
---    staging_olist_reviews, staging_olist_sellers
---    staging_olist_products, staging_olist_customers
--- =============================================================
-
 USE portfolio;
 
 WITH

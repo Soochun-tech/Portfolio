@@ -1,13 +1,3 @@
--- =============================================================
--- 03_diagnose_taxi_drops.sql
--- Why did 8.5% of taxi rows drop? Break down the cause per rule.
---
--- Each rule is checked independently against the FULL raw set.
--- (Rules overlap — a row with negative fare AND 0 passengers gets
--- counted in both rows, so the totals don't sum to dropped count.
--- That's intentional: shows individual rule impact.)
--- =============================================================
-
 USE portfolio;
 
 WITH raw_total AS (

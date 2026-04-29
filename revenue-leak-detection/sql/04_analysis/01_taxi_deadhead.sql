@@ -1,13 +1,3 @@
--- =============================================================
--- 01_taxi_deadhead.sql
--- Business Question: Which zones are the primary drivers of deadhead losses?
---
--- Tables Used:
---    mart_taxi_daily_zone        -- Daily stats by pickup zone
---    mart_taxi_daily_zone_pair   -- Daily stats by pickup-dropoff pair
---    raw_taxi_zone_lookup        -- Zone name reference
--- =============================================================
-
 USE portfolio;
 WITH
 zone_totals AS (

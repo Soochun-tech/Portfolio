@@ -1,10 +1,3 @@
-"""
-Olist mart assets — daily-partitioned.
-
-Note: Olist data spans 2016-2018 (real Brazilian e-commerce timeframe). Our
-partition window matches the bulk of order purchase dates. Days with no
-orders simply produce 0-row partitions, which is fine.
-"""
 from __future__ import annotations
 
 from dagster import (
@@ -16,12 +9,10 @@ from sqlalchemy import text
 from ..resources import MySQLResource
 from ._runlog import run_logged
 
-# Olist purchase dates run mostly 2017-09 to 2018-08
 OLIST_PARTITIONS = DailyPartitionsDefinition(
     start_date="2017-01-01",
     end_date="2018-12-01",
 )
-
 
 @asset(
     partitions_def=OLIST_PARTITIONS,
@@ -41,12 +32,7 @@ def mart_olist_daily_seller(context, mysql: MySQLResource) -> int:
         result = run.conn.execute(
             text(
                 """
-                INSERT INTO mart_olist_daily_seller (
-                    partition_date, seller_id, seller_state,
-                    order_count, item_count, gmv, avg_order_value,
-                    delivered_count, late_count, late_rate,
-                    avg_review_score, negative_review_count
-                )
+                INSERT INTO mart_olist_daily_seller (partition_date, seller_id, seller_state, order_count, item_count, gmv, avg_order_value, delivered_count, late_count, late_rate, avg_review_score, negative_review_count)
                 SELECT
                     o.purchase_date                              AS partition_date,
                     oi.seller_id,
@@ -81,7 +67,6 @@ def mart_olist_daily_seller(context, mysql: MySQLResource) -> int:
     context.log.info(f"[{asset_name}] {partition_date} → {rows} seller-rows")
     return rows
 
-
 @asset(
     partitions_def=OLIST_PARTITIONS,
     group_name="olist_mart",
@@ -100,11 +85,7 @@ def mart_olist_daily_summary(context, mysql: MySQLResource) -> int:
         result = run.conn.execute(
             text(
                 """
-                INSERT INTO mart_olist_daily_summary (
-                    partition_date, order_count, unique_customer_count,
-                    gmv, avg_order_value, delivered_count, late_count,
-                    late_rate, avg_review_score
-                )
+                INSERT INTO mart_olist_daily_summary (partition_date, order_count, unique_customer_count, gmv, avg_order_value, delivered_count, late_count, late_rate, avg_review_score)
                 SELECT
                     o.purchase_date                          AS partition_date,
                     COUNT(DISTINCT o.order_id)               AS order_count,
@@ -137,6 +118,3 @@ def mart_olist_daily_summary(context, mysql: MySQLResource) -> int:
 
     context.log.info(f"[{asset_name}] {partition_date} → {rows} summary-rows")
     return rows
-
-
-# Asset checks deferred to Day 7.

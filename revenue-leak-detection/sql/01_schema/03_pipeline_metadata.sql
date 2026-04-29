@@ -1,16 +1,10 @@
--- =============================================================
--- 03_pipeline_metadata.sql
--- Tables that the pipeline writes to itself: run history + DQ results.
--- Powers the "pipeline monitoring" dashboard later.
--- =============================================================
-
 USE portfolio;
 
 DROP TABLE IF EXISTS pipeline_run_log;
 CREATE TABLE pipeline_run_log (
     run_id          BIGINT       PRIMARY KEY AUTO_INCREMENT,
     asset_name      VARCHAR(100) NOT NULL,
-    partition_key   VARCHAR(40),                  -- e.g., '2024-01-15' for daily partitions
+    partition_key   VARCHAR(40),
     started_at      DATETIME     NOT NULL,
     finished_at     DATETIME,
     status          ENUM('running','success','failed','skipped') NOT NULL,

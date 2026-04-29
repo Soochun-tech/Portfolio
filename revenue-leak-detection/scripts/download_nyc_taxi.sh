@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Download NYC Yellow Cab parquet files for the data pipeline.
-# Default range: 2024-01 ~ 2024-03 (~30M rows total). Adjust YEAR / MONTHS as needed.
 
 set -euo pipefail
 

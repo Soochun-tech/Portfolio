@@ -1,11 +1,3 @@
--- =============================================================
--- 03_olist_cohort.sql
--- Business Question: What is the repurchase rate N months after the first purchase month? (by cohort)
---
--- Tables Used:
---    staging_olist_orders
---    staging_olist_customers   -- used for customer_unique_id (identity tracking)
--- =============================================================
 USE portfolio;
 WITH
 purchases AS (
@@ -65,4 +57,3 @@ JOIN cohort_size cs
     ON ca.cohort_month = cs.cohort_month
 WHERE ca.months_since_first <= 6
 ORDER BY ca.cohort_month, ca.months_since_first;
-

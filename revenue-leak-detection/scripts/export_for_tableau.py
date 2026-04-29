@@ -1,27 +1,3 @@
-"""
-Export pre-aggregated CSV files for Tableau Public.
-
-Why CSV instead of direct connect:
-    Tableau Public (free) doesn't support live database connections.
-    We pre-aggregate the data we need into CSV files that get uploaded
-    to Tableau Public alongside the workbook.
-
-Files produced (under data/exports/):
-    Taxi dashboard:
-      taxi_zone_summary.csv      — 1 row per zone, full month aggregation
-      taxi_daily_kpi.csv         — 1 row per day, platform totals
-      taxi_top_routes.csv        — top 100 (pickup -> dropoff) pairs by trips
-      taxi_zone_lookup.csv       — zone metadata (borough, service_zone)
-
-    Olist dashboard:
-      olist_seller_leak.csv      — seller leak analysis result (top 100)
-      olist_daily_kpi.csv        — 1 row per day platform KPI
-      olist_cohort_retention.csv — cohort retention matrix
-      olist_state_summary.csv    — seller_state level summary for choropleth
-
-Usage:
-    python scripts/export_for_tableau.py
-"""
 from __future__ import annotations
 
 import os
@@ -36,7 +12,6 @@ ROOT = Path(__file__).resolve().parent.parent
 EXPORT_DIR = ROOT / "data" / "exports"
 EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
-
 def get_engine():
     load_dotenv(ROOT / ".env")
     user = os.environ.get("MYSQL_USER", "analyst")
@@ -46,11 +21,6 @@ def get_engine():
     db = os.environ.get("MYSQL_DATABASE", "portfolio")
     url = f"mysql+mysqlconnector://{user}:{pw}@{host}:{port}/{db}?charset=utf8mb4"
     return create_engine(url, pool_pre_ping=True)
-
-
-# =============================================================
-# TAXI EXPORTS
-# =============================================================
 
 TAXI_ZONE_SUMMARY_SQL = """
 WITH
@@ -74,7 +44,7 @@ zone_dropoffs AS (
     FROM mart_taxi_daily_zone_pair
     GROUP BY dropoff_zone_id
 )
-SELECT
+                SELECT
     zl.locationid                  AS zone_id,
     zl.zone                        AS zone_name,
     zl.borough,
@@ -102,7 +72,7 @@ ORDER BY surplus DESC
 """
 
 TAXI_DAILY_KPI_SQL = """
-SELECT
+                SELECT
     partition_date,
     DAYNAME(partition_date)         AS day_of_week,
     DAYOFWEEK(partition_date) IN (1, 7) AS is_weekend,
@@ -117,7 +87,7 @@ ORDER BY partition_date
 """
 
 TAXI_TOP_ROUTES_SQL = """
-SELECT
+                SELECT
     p.pickup_zone_id,
     p.dropoff_zone_id,
     pul.zone           AS pickup_zone_name,
@@ -138,7 +108,7 @@ LIMIT 100
 """
 
 TAXI_ZONE_LOOKUP_SQL = """
-SELECT
+                SELECT
     locationid AS zone_id,
     zone       AS zone_name,
     borough,
@@ -146,11 +116,6 @@ SELECT
 FROM raw_taxi_zone_lookup
 ORDER BY locationid
 """
-
-
-# =============================================================
-# OLIST EXPORTS
-# =============================================================
 
 OLIST_SELLER_LEAK_SQL = """
 WITH
@@ -191,7 +156,7 @@ seller_funnel AS (
     FROM seller_orders
     GROUP BY seller_id, seller_state
 )
-SELECT
+                SELECT
     *,
     ROUND(late_orders * avg_order_value * negative_review_rate, 2) AS est_leak_usd,
     ROW_NUMBER() OVER (
@@ -204,7 +169,7 @@ LIMIT 100
 """
 
 OLIST_DAILY_KPI_SQL = """
-SELECT
+                SELECT
     o.purchase_date                   AS partition_date,
     DAYNAME(o.purchase_date)          AS day_of_week,
     COUNT(DISTINCT o.order_id)        AS order_count,
@@ -256,7 +221,7 @@ cohort_size AS (
     SELECT cohort_month, active_customers AS cohort_size
     FROM cohort_activity WHERE months_since_first = 0
 )
-SELECT
+                SELECT
     ca.cohort_month,
     cs.cohort_size,
     ca.months_since_first,
@@ -270,7 +235,7 @@ ORDER BY ca.cohort_month, ca.months_since_first
 """
 
 OLIST_STATE_SUMMARY_SQL = """
-SELECT
+                SELECT
     s.seller_state,
     COUNT(DISTINCT s.seller_id)                     AS sellers,
     COUNT(DISTINCT o.order_id)                      AS orders,
@@ -288,11 +253,6 @@ GROUP BY s.seller_state
 ORDER BY gmv DESC
 """
 
-
-# =============================================================
-# RUNNER
-# =============================================================
-
 EXPORTS = [
     ("taxi_zone_summary",       TAXI_ZONE_SUMMARY_SQL),
     ("taxi_daily_kpi",          TAXI_DAILY_KPI_SQL),
@@ -303,7 +263,6 @@ EXPORTS = [
     ("olist_cohort_retention",  OLIST_COHORT_SQL),
     ("olist_state_summary",     OLIST_STATE_SUMMARY_SQL),
 ]
-
 
 def main() -> int:
     engine = get_engine()
@@ -324,7 +283,6 @@ def main() -> int:
     print(f"[✓] Done. Files saved under {EXPORT_DIR}")
     print(f"    Open them in Tableau Public via 'Connect to Data → Text File'.")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

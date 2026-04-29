@@ -1,12 +1,3 @@
-"""
-Dagster Definitions — entry point that registers all assets, asset checks,
-and resources for this code location.
-
-Run the local dev UI from the project root:
-    dagster dev -m dagster_project.definitions
-
-Then open http://localhost:3000.
-"""
 from __future__ import annotations
 
 from dagster import Definitions, load_assets_from_modules

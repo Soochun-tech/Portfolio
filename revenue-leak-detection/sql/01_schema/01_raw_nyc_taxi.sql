@@ -1,11 +1,3 @@
--- =============================================================
--- 01_raw_nyc_taxi.sql
--- Raw layer for NYC Yellow Cab trip data.
--- Schema mirrors the parquet files published by NYC TLC (2022+ format).
--- Intentionally permissive: no NOT NULL constraints, no FK — staging
--- layer is responsible for cleaning bad rows.
--- =============================================================
-
 USE portfolio;
 
 DROP TABLE IF EXISTS raw_yellow_taxi;
@@ -30,7 +22,6 @@ CREATE TABLE raw_yellow_taxi (
     congestion_surcharge  DECIMAL(10,2),
     airport_fee           DECIMAL(10,2),
 
-    -- Index pickup_datetime to make time-range scans cheap
     KEY idx_pickup (tpep_pickup_datetime),
     KEY idx_pu_zone_dt (pulocationid, tpep_pickup_datetime)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

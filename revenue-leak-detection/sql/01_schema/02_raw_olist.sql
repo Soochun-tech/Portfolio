@@ -1,10 +1,3 @@
--- =============================================================
--- 02_raw_olist.sql
--- Raw layer for Olist Brazilian E-commerce dataset (Kaggle).
--- 9 tables, normalized. Loaded as-is from CSV — we do NOT enforce
--- referential integrity here; staging will validate joins.
--- =============================================================
-
 USE portfolio;
 
 DROP TABLE IF EXISTS raw_olist_orders;
@@ -83,7 +76,7 @@ DROP TABLE IF EXISTS raw_olist_products;
 CREATE TABLE raw_olist_products (
     product_id                  VARCHAR(40),
     product_category_name       VARCHAR(100),
-    product_name_lenght         INT,    -- (typo preserved from upstream)
+    product_name_lenght         INT,
     product_description_lenght  INT,
     product_photos_qty          INT,
     product_weight_g            INT,
