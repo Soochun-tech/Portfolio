@@ -1,13 +1,12 @@
 -- =============================================================
 -- 02_olist_seller_leak.sql
--- 비즈니스 질문: 셀러 매출이 어디서 새고 있나?
--- (late delivery → bad review → lost repeat purchase 의 funnel)
+-- Business Question: Where is seller revenue leaking?
+-- (Funnel: Late Delivery → Bad Review → Lost Repeat Purchase)
 --
--- 가이드: sql/04_analysis/README.md 의 "문제 2" 참고
--- 사용 테이블:
---   staging_olist_orders, staging_olist_order_items
---   staging_olist_reviews, staging_olist_sellers
---   staging_olist_products, staging_olist_customers
+-- Tables Used:
+--    staging_olist_orders, staging_olist_order_items
+--    staging_olist_reviews, staging_olist_sellers
+--    staging_olist_products, staging_olist_customers
 -- =============================================================
 
 USE portfolio;
