@@ -203,17 +203,6 @@ python scripts/export_for_tableau.py
 
 ---
 
-## Roadmap status
-
-- [x] **Day 1** — MySQL setup, raw schema, raw data load (4.5M rows)
-- [x] **Day 2** — staging cleaning + 10 DQ checks (96.4% retention)
-- [x] **Day 3** — Dagster code location, daily-partitioned mart assets
-- [x] **Day 4** — 31-partition backfill + advanced SQL queries
-  (CTE / window / recursive)
-- [x] **Day 5** — Two Tableau Public dashboards (CSV export pipeline)
-- [ ] **Day 6** — README polish, ERD diagram, screenshots, write-ups
-- [ ] **Day 7** — *(Optional)* pipeline monitoring dashboard from
-  `pipeline_run_log` and `pipeline_dq_results`
 
 ---
 
