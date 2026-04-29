@@ -1,4 +1,16 @@
-
+-- =============================================================
+-- 04_taxi_growth_analysis.sql
+-- Business Question: What are the daily growth trends and cumulative performance?
+-- (Includes handling of missing dates using a recursive date series)
+--
+-- Logic:
+--    1. Generate a continuous date range (Recursive CTE)
+--    2. Calculate daily total trips and revenue
+--    3. Compute Cumulative totals and Day-over-Day (DoD) growth %
+--
+-- Tables Used:
+--    mart_taxi_daily_zone  -- Source for daily trip and revenue metrics
+-- =============================================================
 
 USE portfolio;
 WITH RECURSIVE date_series AS (
