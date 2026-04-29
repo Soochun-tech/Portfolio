@@ -1,23 +1,3 @@
--- =============================================================
--- 01_clean_yellow_taxi.sql
--- raw_yellow_taxi → staging_yellow_taxi
---
--- Cleaning rules (each one will also be logged to pipeline_dq_results):
---   R1. pickup_datetime BETWEEN 2024-01-01 AND 2024-01-31
---       (Day 1 verification found 18 trips outside this range — clearly bad data)
---   R2. pickup_datetime < dropoff_datetime  (chronological)
---   R3. trip_duration BETWEEN 1 minute AND 4 hours
---   R4. trip_distance BETWEEN 0 (exclusive) AND 100 miles
---   R5. fare_amount > 0  AND  total_amount > 0  (no comp / no negatives)
---   R6. passenger_count: NORMALIZE only (don't drop). NYC TLC has ~6% rows
---       with 0/NULL passenger_count due to driver entry errors, but the trip
---       itself is still valid for revenue/route analysis. We keep these rows
---       but set passenger_count to NULL so analysis can filter explicitly.
---   R7. pulocationid AND dolocationid BETWEEN 1 AND 265 (valid TLC zones)
---
--- LaGuardia, JFK, Newark zones (for is_airport_pickup/dropoff flags):
---   132 = JFK, 138 = LaGuardia, 1 = Newark Airport (EWR)
--- =============================================================
 
 USE portfolio;
 
