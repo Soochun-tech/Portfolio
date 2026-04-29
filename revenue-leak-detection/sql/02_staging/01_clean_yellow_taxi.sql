@@ -1,13 +1,6 @@
 
 USE portfolio;
-
--- Make this script idempotent: clear staging before re-running.
 TRUNCATE TABLE staging_yellow_taxi;
-
--- -------------------------------------------------------------
--- Single-pass clean + transform + insert.
--- Wrapped in a CTE for readability — each filter is a labelled step.
--- -------------------------------------------------------------
 INSERT INTO staging_yellow_taxi (
     vendorid, pickup_datetime, dropoff_datetime, passenger_count, trip_distance,
     pulocationid, dolocationid, payment_type, ratecodeid,
@@ -17,14 +10,12 @@ INSERT INTO staging_yellow_taxi (
     is_airport_pickup, is_airport_dropoff
 )
 WITH
--- Step 1. Date-window filter (kills 2009/2002/Dec 2023 outliers we found in Day 1)
 in_window AS (
     SELECT *
     FROM raw_yellow_taxi
     WHERE tpep_pickup_datetime >= '2024-01-01'
       AND tpep_pickup_datetime <  '2024-02-01'
 ),
--- Step 2. Chronological order + sane duration
 chrono_ok AS (
     SELECT *,
            TIMESTAMPDIFF(MINUTE, tpep_pickup_datetime, tpep_dropoff_datetime) AS dur_min
@@ -32,8 +23,6 @@ chrono_ok AS (
     WHERE tpep_dropoff_datetime > tpep_pickup_datetime
       AND TIMESTAMPDIFF(MINUTE, tpep_pickup_datetime, tpep_dropoff_datetime) BETWEEN 1 AND 240
 ),
--- Step 3. Distance + money + zone validity
--- (Note: passenger_count is NORMALIZED in step 4, not filtered here.)
 fully_valid AS (
     SELECT *
     FROM chrono_ok
@@ -44,7 +33,6 @@ fully_valid AS (
       AND pulocationid BETWEEN 1 AND 265
       AND dolocationid BETWEEN 1 AND 265
 )
--- Step 4. Project + add derived columns
 SELECT
     vendorid,
     tpep_pickup_datetime  AS pickup_datetime,
@@ -74,16 +62,9 @@ SELECT
     dolocationid IN (1, 132, 138) AS is_airport_dropoff
 FROM fully_valid;
 
--- -------------------------------------------------------------
--- Verify results
--- -------------------------------------------------------------
 SELECT
     (SELECT COUNT(*) FROM raw_yellow_taxi)     AS raw_rows,
     (SELECT COUNT(*) FROM staging_yellow_taxi) AS staging_rows,
     (SELECT COUNT(*) FROM raw_yellow_taxi)
         - (SELECT COUNT(*) FROM staging_yellow_taxi) AS dropped_rows,
-    ROUND(
-        100.0 * (SELECT COUNT(*) FROM staging_yellow_taxi)
-              / (SELECT COUNT(*) FROM raw_yellow_taxi),
-        2
-    ) AS retention_pct;
+    ROUND( 100.0 * (SELECT COUNT(*) FROM staging_yellow_taxi) / (SELECT COUNT(*) FROM raw_yellow_taxi),2) AS retention_pct;
